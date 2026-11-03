@@ -21,5 +21,8 @@
 	"imports": {
 		"#lib": "./src/lib/index.js",
 		"#lib/*": "./src/lib/*"
+	},
+	"dependencies": {
+		"@duckdb/duckdb-wasm": "^1.33.1-dev57.0"
 	}
 }

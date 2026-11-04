@@ -48,5 +48,4 @@
     <div class="bg-blue-400">
         Content: {tmp}
     </div>
-
 </div>

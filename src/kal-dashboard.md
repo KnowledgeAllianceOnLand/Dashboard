@@ -2,28 +2,27 @@
 theme: dashboard
 title: KAL Dashboard
 toc: false
+sql:
+    energy_transition: https://media.githubusercontent.com/media/KnowledgeAllianceOnLand/KAL-data/refs/heads/main/parquets/energy_transition.parquet?download=true
+    iplc: https://media.githubusercontent.com/media/KnowledgeAllianceOnLand/KAL-data/refs/heads/main/parquets/iplc.parquet?download=true
 ---
 
-# Rocket launches 🚀
+# Pays
 
 ```js
-import * as duckdb from "npm:@duckdb/duckdb-wasm";
-import {DuckDBClient} from "npm:@observablehq/duckdb";
+const countries = await sql`
+SELECT country_area, country_code
+FROM energy_transition
+GROUP BY country_area, country_code
+ORDER BY country_area
+`;
 ```
 
 ```js
-//const db = await DuckDBClient.of()
-const sql = DuckDBClient.sql();
+const selectedCountry = Inputs.select(countries, {
+  label: "Sélectionner un pays",
+  format: (country) => country.country_area
+});
 ```
 
-```sql
-LOAD httpfs; LOAD spatial;
-```
-
-```sql
-ATTACH 'https://github.com/KnowledgeAllianceOnLand/Dashboard/releases/download/data/kal.duckdb';
-```
-
-```sql
-SELECT * FROM energy_transition LIMIT 50;
-```
+${selectedCountry}

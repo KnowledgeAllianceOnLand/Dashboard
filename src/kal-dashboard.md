@@ -7,7 +7,7 @@ sql:
     iplc: https://media.githubusercontent.com/media/KnowledgeAllianceOnLand/KAL-data/refs/heads/main/parquets/iplc.parquet?download=true
 ---
 
-# Pays
+# Countries
 
 ```js
 const countries = await sql`
@@ -19,10 +19,23 @@ ORDER BY country_area
 ```
 
 ```js
-const selectedCountry = Inputs.select(countries, {
-  label: "Sélectionner un pays",
+const selectedCountry = view(Inputs.select(countries, {
+  label: "Select a country",
   format: (country) => country.country_area
-});
+}));
 ```
 
-${selectedCountry}
+```js
+{
+  const result = html`<div>↻ Loading data…</div>`;
+  display(result);
+
+  const countryData = await sql`
+    SELECT *
+    FROM energy_transition
+    WHERE country_code = ${selectedCountry.country_code}
+  `;
+
+  result.replaceChildren(Inputs.table(countryData, {select: false}));
+}
+```

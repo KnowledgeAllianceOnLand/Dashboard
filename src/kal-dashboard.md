@@ -3,26 +3,25 @@ theme: dashboard
 title: KAL Dashboard
 toc: false
 sql:
-    energy_transition: https://media.githubusercontent.com/media/KnowledgeAllianceOnLand/KAL-data/refs/heads/main/parquets/energy_transition.parquet?download=true
+    energy_transition: data/energy_transition.parquet
+    energy_transition_geo: data/energy_transition_geo.parquet
 ---
-
-<!-- iplc: https://media.githubusercontent.com/media/KnowledgeAllianceOnLand/KAL-data/refs/heads/main/parquets/iplc.parquet?download=true -->
 
 # Countries
 
 ```js
 const countries = await sql`
-  SELECT country_area, country_code
+  SELECT country_name, country_code
   FROM energy_transition
-  GROUP BY country_area, country_code
-  ORDER BY country_area
+  GROUP BY country_name, country_code
+  ORDER BY country_name
 `;
 ```
 
 ```js
 const selectedCountry = view(Inputs.select(countries, {
   label: "Select a country",
-  format: (country) => country.country_area
+  format: (country) => country.country_name
 }));
 ```
 
@@ -31,23 +30,16 @@ const selectedCountry = view(Inputs.select(countries, {
   const result = html`<div>↻ Loading data…</div>`;
   display(result);
 
-  // Create dummy SQL data + polygons to centroids
-  await sql`
-    CREATE OR REPLACE TABLE energy_transition_iplc AS
-    SELECT * REPLACE (
-      ST_Centroid(geom) AS geom
-    ),
-    (random() > 0.5) AS iplc_overlap
-    FROM energy_transition;
-  `;
-
   // Select country + geometry as geoJSON
   const countryDataIPLC = await sql`
-    SELECT 
-      * EXCLUDE (geom),
+    SELECT * EXCLUDE (geom),
       ST_AsGeoJSON(geom) AS geom_json
-    FROM energy_transition_iplc
-    WHERE country_code = ${selectedCountry.country_code}
+    FROM energy_transition_geo
+    WHERE ID IN (
+        SELECT unnest(id_l)
+        FROM energy_transition
+        WHERE country_code = ${selectedCountry.country_code}
+    );
   `;
 
   // Plot table
@@ -78,8 +70,8 @@ const selectedCountry = view(Inputs.select(countries, {
       height: 400,
       marks: [
         Plot.geo(countryDataGeoJSON, {
-          stroke: (d) => d.properties.iplc_overlap ? "crimson" : "steelblue",
-          fill: (d) => d.properties.iplc_overlap ? "crimson" : "steelblue",
+          stroke: (d) => d.properties.intersects_iplc ? "crimson" : "steelblue",
+          fill: (d) => d.properties.intersects_iplc ? "crimson" : "steelblue",
           r: 3.5,
         })
       ]
@@ -88,10 +80,10 @@ const selectedCountry = view(Inputs.select(countries, {
 
   // Prep data for barplot
   const statsOverlapIPLC = await sql`
-    SELECT dataset, COUNT(*) as count
-    FROM energy_transition_iplc
+    SELECT dataset_l, COUNT(*) as count
+    FROM energy_transition
     WHERE country_code = ${selectedCountry.country_code}
-    GROUP BY dataset
+    GROUP BY dataset_l
   `;
 
   Inputs.table(statsOverlapIPLC, {

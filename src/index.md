@@ -1,110 +1,193 @@
 ---
+theme: dashboard
+title: KAL Dashboard
 toc: false
+sql:
+    energy_transition: data/energy_transition.parquet
+    energy_transition_geo: data/energy_transition_geo.parquet
 ---
 
-<div class="hero">
-  <h1>KAL Dashboard</h1>
-  <h2>Welcome to your new app! Edit&nbsp;<code style="font-size: 90%;">src/index.md</code> to change this page.</h2>
-  <a href="https://observablehq.com/framework/getting-started">Get started<span style="display: inline-block; margin-left: 0.25rem;">↗︎</span></a>
-</div>
+# KAL Dashboard
 
-<div class="grid grid-cols-2" style="grid-auto-rows: 504px;">
-  <div class="card">${
-    resize((width) => Plot.plot({
-      title: "Your awesomeness over time 🚀",
-      subtitle: "Up and to the right!",
-      width,
-      y: {grid: true, label: "Awesomeness"},
-      marks: [
-        Plot.ruleY([0]),
-        Plot.lineY(aapl, {x: "Date", y: "Close", tip: true})
-      ]
-    }))
-  }</div>
-  <div class="card">${
-    resize((width) => Plot.plot({
-      title: "How big are penguins, anyway? 🐧",
-      width,
-      grid: true,
-      x: {label: "Body mass (g)"},
-      y: {label: "Flipper length (mm)"},
-      color: {legend: true},
-      marks: [
-        Plot.linearRegressionY(penguins, {x: "body_mass_g", y: "flipper_length_mm", stroke: "species"}),
-        Plot.dot(penguins, {x: "body_mass_g", y: "flipper_length_mm", stroke: "species", tip: true})
-      ]
-    }))
-  }</div>
-</div>
+```js
+const countries = await sql`
+  SELECT country_name, country_code
+  FROM energy_transition
+  GROUP BY country_name, country_code
+  ORDER BY country_name
+`;
+```
 
----
+```js
+const selectedCountry = view(Inputs.select(countries, {
+  label: "Select a country",
+  format: (country) => country.country_name
+}));
+```
 
-## Next steps
+```js
+// Select country + geometry as geoJSON
+const countryDataIPLC = await sql`
+  SELECT * EXCLUDE (geom),
+    ST_AsGeoJSON(geom) AS geom_json
+  FROM energy_transition_geo
+  WHERE ID IN (
+      SELECT unnest(id_l)
+      FROM energy_transition
+      WHERE country_code = ${selectedCountry.country_code}
+  );
+`;
 
-Here are some ideas of things you could try…
+// Prep data for map
+const countryDataGeoJSON = {
+  type: "FeatureCollection",
+  features: Array.from(countryDataIPLC).map(({ geom_json, ...properties }) => ({
+    type: "Feature",
+    geometry: JSON.parse(geom_json),
+    properties
+  }))
+};
 
-<div class="grid grid-cols-4">
-  <div class="card">
-    Chart your own data using <a href="https://observablehq.com/framework/lib/plot"><code>Plot</code></a> and <a href="https://observablehq.com/framework/files"><code>FileAttachment</code></a>. Make it responsive using <a href="https://observablehq.com/framework/javascript#resize(render)"><code>resize</code></a>.
-  </div>
-  <div class="card">
-    Create a <a href="https://observablehq.com/framework/project-structure">new page</a> by adding a Markdown file (<code>whatever.md</code>) to the <code>src</code> folder.
-  </div>
-  <div class="card">
-    Add a drop-down menu using <a href="https://observablehq.com/framework/inputs/select"><code>Inputs.select</code></a> and use it to filter the data shown in a chart.
-  </div>
-  <div class="card">
-    Write a <a href="https://observablehq.com/framework/loaders">data loader</a> that queries a local database or API, generating a data snapshot on build.
-  </div>
-  <div class="card">
-    Import a <a href="https://observablehq.com/framework/imports">recommended library</a> from npm, such as <a href="https://observablehq.com/framework/lib/leaflet">Leaflet</a>, <a href="https://observablehq.com/framework/lib/dot">GraphViz</a>, <a href="https://observablehq.com/framework/lib/tex">TeX</a>, or <a href="https://observablehq.com/framework/lib/duckdb">DuckDB</a>.
-  </div>
-  <div class="card">
-    Ask for help, or share your work or ideas, on our <a href="https://github.com/observablehq/framework/discussions">GitHub discussions</a>.
-  </div>
-  <div class="card">
-    Visit <a href="https://github.com/observablehq/framework">Framework on GitHub</a> and give us a star. Or file an issue if you’ve found a bug!
-  </div>
-</div>
+const mapContainer = html`<div class="kal-map" aria-label="Interactive map of energy transition projects"></div>`;
+display(mapContainer);
+
+const map = L.map(mapContainer, {scrollWheelZoom: false});
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  maxZoom: 19,
+}).addTo(map);
+
+const isIplcIntersecting = (feature) => {
+  const value = feature.properties.intersects_iplc;
+  return value === true || value === 1 || String(value).trim().toLowerCase() === "true" || String(value).trim() === "1";
+};
+
+const geoLayer = L.geoJSON(countryDataGeoJSON, {
+  pointToLayer: (feature, latlng) => L.circleMarker(latlng, {
+    radius: 6,
+    color: isIplcIntersecting(feature) ? "#b42318" : "#176b87",
+    fillColor: isIplcIntersecting(feature) ? "#ef6a5b" : "#63b3c4",
+    fillOpacity: 0.8,
+    weight: 1.5,
+  }),
+  style: (feature) => ({
+    color: isIplcIntersecting(feature) ? "#b42318" : "#176b87",
+    fillColor: isIplcIntersecting(feature) ? "#ef6a5b" : "#63b3c4",
+    fillOpacity: 0.55,
+    weight: 1.5,
+  }),
+  onEachFeature: (feature, layer) => {
+    const properties = feature.properties;
+    layer.bindPopup(`<strong>${properties.ID ?? "Project"}</strong><br>${properties.dataset ?? ""}`);
+  },
+}).addTo(map);
+
+const legend = L.control({position: "topright"});
+legend.onAdd = () => {
+  const container = L.DomUtil.create("div", "kal-map-legend");
+  container.innerHTML = `
+    <strong>Energy Transition Projects</strong>
+    <div><span class="kal-map-legend-swatch kal-map-legend-swatch-red"></span>Intersects IPLC</div>
+    <div><span class="kal-map-legend-swatch kal-map-legend-swatch-blue"></span>Does not intersect IPLC</div>
+  `;
+  L.DomEvent.disableClickPropagation(container);
+  return container;
+};
+legend.addTo(map);
+
+if (geoLayer.getBounds().isValid()) {
+  map.fitBounds(geoLayer.getBounds(), {padding: [20, 20], maxZoom: 12});
+} else {
+  map.setView([20, 0], 2);
+}
+
+// Prep data for barplot
+const statsOverlapIPLC = await sql`
+  SELECT dataset_l, COUNT(*) as count
+  FROM energy_transition
+  WHERE country_code = ${selectedCountry.country_code}
+  GROUP BY dataset_l
+`;
+
+Inputs.table(statsOverlapIPLC, {
+  select: false,
+});
+```
+
+```sql
+SELECT 
+    dataset as "Energy type",
+    COALESCE(SUM(area_ha) FILTER (WHERE iplc_id_l IS NOT NULL AND len(iplc_id_l) > 0), 0) AS "Total IPLC areas (ha)",
+    COALESCE(SUM(area_ha) FILTER (WHERE iplc_id_l IS NOT NULL AND len(iplc_id_l) > 0 AND lower(iplc_indicative) = 'false'), 0) AS "Precisely mapped areas (ha)",
+    COALESCE(SUM(area_ha) FILTER (WHERE iplc_id_l IS NOT NULL AND len(iplc_id_l) > 0 AND lower(iplc_indicative) = 'true'), 0) AS "Indicative areas (ha)"
+FROM energy_transition, UNNEST(dataset_l) AS t(dataset)
+WHERE dataset IN ('Mines', 'Wind', 'Solar', 'Hydropower', 'Geothermal')
+AND country_code = ${selectedCountry.country_code}
+GROUP BY dataset
+ORDER BY 2 DESC;
+```
+
+```js
+// display(
+//   Plot.plot({
+//     marks: [
+//       Plot.ruleX([0]),
+//       Plot.barX(countryDataGeoJSON, {
+//         x: "count", y: "dataset"
+//       })
+//     ]
+//   })
+// )
+```
 
 <style>
 
-.hero {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-family: var(--sans-serif);
-  margin: 4rem 0 8rem;
-  text-wrap: balance;
-  text-align: center;
+.kal-map {
+  height: 420px;
+  margin: 1rem 0 2rem;
+  border: 1px solid var(--theme-foreground-faint);
+  border-radius: 6px;
+  overflow: hidden;
 }
 
-.hero h1 {
-  margin: 1rem 0;
-  padding: 1rem 0;
-  max-width: none;
-  font-size: 14vw;
-  font-weight: 900;
-  line-height: 1;
-  background: linear-gradient(30deg, var(--theme-foreground-focus), currentColor);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.kal-map-legend {
+  padding: 8px 10px;
+  border: 1px solid #c8c8c8;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #242424;
+  font-size: 0.8rem;
+  line-height: 1.7;
 }
 
-.hero h2 {
-  margin: 0;
-  max-width: 34em;
-  font-size: 20px;
-  font-style: initial;
-  font-weight: 500;
-  line-height: 1.5;
-  color: var(--theme-foreground-muted);
+.kal-map-legend strong {
+  display: block;
+  margin-bottom: 2px;
 }
 
-@media (min-width: 640px) {
-  .hero h1 {
-    font-size: 90px;
+.kal-map-legend-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  vertical-align: 0;
+}
+
+.kal-map-legend-swatch-red {
+  background: #ef6a5b;
+  color: #b42318;
+}
+
+.kal-map-legend-swatch-blue {
+  background: #63b3c4;
+  color: #176b87;
+}
+
+@media (max-width: 640px) {
+  .kal-map {
+    height: 340px;
   }
 }
 

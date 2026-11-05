@@ -7,6 +7,9 @@ export default {
   base: "/Dashboard/",
 
   duckdb: {
+    // Un seul bundle wasm est livré : le MVP (compatible tous navigateurs).
+    // Sans cela, le site embarque mvp + eh (≈ 73 Mo) et l'extension spatiale en double (≈ 44 Mo).
+    platforms: {eh: false},
     extensions: ["spatial"]
   },
 

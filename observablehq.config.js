@@ -3,6 +3,9 @@ export default {
   // The app’s title; used in the sidebar and webpage titles.
   title: "KAL Dashboard",
 
+  // GitHub Pages serves this project under the repository name.
+  base: "/Dashboard/",
+
   duckdb: {
     extensions: ["spatial"]
   },

@@ -4,8 +4,9 @@ title: KAL Dashboard
 toc: false
 sql:
     energy_transition: https://media.githubusercontent.com/media/KnowledgeAllianceOnLand/KAL-data/refs/heads/main/parquets/energy_transition.parquet?download=true
-    iplc: https://media.githubusercontent.com/media/KnowledgeAllianceOnLand/KAL-data/refs/heads/main/parquets/iplc.parquet?download=true
 ---
+
+<!-- iplc: https://media.githubusercontent.com/media/KnowledgeAllianceOnLand/KAL-data/refs/heads/main/parquets/iplc.parquet?download=true -->
 
 # Countries
 
@@ -84,6 +85,29 @@ const selectedCountry = view(Inputs.select(countries, {
       ]
     })
   );
+
+  // Prep data for barplot
+  const statsOverlapIPLC = await sql`
+    SELECT dataset, COUNT(*) as count
+    FROM energy_transition_iplc
+    WHERE country_code = ${selectedCountry.country_code}
+    GROUP BY dataset
+  `;
+
+  Inputs.table(statsOverlapIPLC, {
+    select: false,
+  });
+
+  display(
+    Plot.plot({
+      marks: [
+        Plot.ruleX([0]),
+        Plot.barX(countryDataGeoJSON, {
+          x: "count", y: "dataset"
+        })
+      ]
+    })
+  )
 
 }
 ```

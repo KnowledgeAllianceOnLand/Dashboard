@@ -70,7 +70,7 @@ export function withLoading(promise, render, {loading: message = "Loading…", h
   const fail = (error) => {
     if (!container.isConnected) return;
     const box = document.createElement("div");
-    box.style.cssText = "padding:1rem;border:1px solid var(--theme-critical);border-radius:6px;font-size:0.9rem";
+    box.style.cssText = "padding:1rem;border:1px solid var(--theme-red);border-radius:8px;font:400 0.9rem var(--sans-serif);background:color-mix(in srgb, var(--theme-red), transparent 95%)";
     box.textContent = `Error: ${error?.message ?? error}`;
     container.replaceChildren(box);
   };

@@ -173,7 +173,7 @@ export function map(geojson, {
       const control = L.control({position: "topright"});
       control.onAdd = () => {
         const box = L.DomUtil.create("div");
-        box.style.cssText = "padding:8px 10px;border:1px solid #c8c8c8;border-radius:4px;background:rgba(255,255,255,.94);color:#242424;font-size:.8rem;line-height:1.7";
+        box.style.cssText = "padding:8px 10px;border:1px solid var(--theme-foreground-faint);border-radius:8px;background:var(--theme-background);color:var(--theme-foreground);font:12.5px/1.7 var(--sans-serif);box-shadow:0 2px 8px rgba(16,49,79,.12)";
         if (legendTitle) {
           const title = document.createElement("strong");
           title.style.cssText = "display:block;margin-bottom:2px";

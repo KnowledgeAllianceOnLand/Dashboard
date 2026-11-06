@@ -1,7 +1,7 @@
 import * as Plot from "npm:@observablehq/plot";
 import {titleElement} from "./title.js";
 
-const FONT_FAMILY = '"Source Sans 3", system-ui, sans-serif';
+const FONT_FAMILY = '"Inter", system-ui, sans-serif';
 
 // 3 chiffres significatifs (2 décimales minimum) : une petite valeur ne s'affiche pas comme « 0 ».
 function formatNumber(v) {

@@ -1,0 +1,343 @@
+/*
+ * Thème « bleu » du KAL Dashboard (Knowledge Alliance on Land).
+ *
+ * Mode clair uniquement (base `air` de Framework), habillage « plateforme » :
+ * header fixe dégradé bleu marine avec sélecteur de page déroulant à droite,
+ * footer structuré. Les variables dérivées
+ * (--theme-foreground-muted, -faint, -fainter, -faintest, -alt) sont calculées
+ * par `color-mix` à partir des couleurs primaires : redéfinir celles-ci suffit.
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import url("observablehq:default.css");
+@import url("observablehq:theme-air.css");
+
+:root {
+  /* Hauteur de la barre supérieure (le layout de Framework s'adapte seul). */
+  --observablehq-header-height: 3.4rem;
+
+  /* Typographie harmonisée : Inter pour les textes, les titres et les
+     widgets (Framework utilise --serif pour le corps et les titres). */
+  --sans-serif: "Inter", -apple-system, BlinkMacSystemFont, "avenir next",
+    avenir, helvetica, "helvetica neue", ubuntu, roboto, noto, "segoe ui", arial,
+    sans-serif;
+  --serif: var(--sans-serif);
+  --monospace: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas,
+    monospace;
+
+  /* Primaire */
+  --theme-foreground: #10314f; /* texte bleu marine profond */
+  --theme-foreground-alt: #0b2540; /* titres */
+  --theme-foreground-focus: #1c5fa8; /* liens, accents, focus */
+  --theme-background-a: #f3f7fc; /* fond bleu très pâle */
+
+  /* Accents chromatiques (graphiques, inspecteurs) */
+  --theme-blue: #1c5fa8;
+  --theme-cyan: #2e8fb3;
+  --theme-purple: #5b6fc0;
+  --theme-green: #2f8f6b;
+  --theme-red: #c25b4e;
+  --theme-yellow: #d99a2b;
+}
+
+/* ------------------------------------------------------------------ */
+/* Header général                                                      */
+/* ------------------------------------------------------------------ */
+
+#observablehq-header {
+  height: var(--observablehq-header-height);
+  padding: 0 2rem;
+  /* Affleurant au bord droit de la colonne de contenu (bord de l'écran
+     sur les viewports plus étroits que la largeur maximale). */
+  right: max(0rem, (100vw - var(--observablehq-max-width)) / 2);
+  /* Annule la marge droite négative par défaut (-2rem) qui dépasserait
+     du bord droit maintenant que `right` ne inclut plus le retrait. */
+  margin: 0 0 2rem -2rem;
+  background: linear-gradient(90deg, #0b2540 0%, #123c66 60%, #1c5fa8 140%);
+  border-bottom: none;
+  color: #eaf2fb;
+  box-shadow: 0 2px 12px rgba(11, 37, 64, 0.22);
+}
+
+.kal-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.kal-logo {
+  flex: none;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.25));
+}
+
+.kal-brand-name {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .kal-brand-name {
+    font-size: 13px;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Sélecteur de page (menu déroulant, tout à droite du header)          */
+/* ------------------------------------------------------------------ */
+
+.kal-page-select {
+  margin-left: auto;
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 0.42rem 2.2rem 0.42rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 9px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%23eaf2fb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    no-repeat right 0.7rem center / 11px,
+    rgba(255, 255, 255, 0.12);
+  color: #eaf2fb;
+  font: 500 13px var(--sans-serif);
+  cursor: pointer;
+  color-scheme: dark; /* liste déroulante native en mode sombre */
+  transition: background-color 0.15s ease;
+}
+
+.kal-page-select:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.kal-page-select:focus-visible {
+  outline: 2px solid #85c1f0;
+  outline-offset: 1px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Footer général                                                      */
+/* ------------------------------------------------------------------ */
+
+#observablehq-footer {
+  margin-top: 6rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--theme-foreground-faintest);
+}
+
+/* La navigation précédent/suivant de Framework est redondante avec le menu. */
+#observablehq-footer nav {
+  display: none;
+}
+
+.kal-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 2rem;
+  font-size: 12.5px;
+}
+
+.kal-footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kal-footer-right {
+  text-align: right;
+}
+
+.kal-footer-brand {
+  font-weight: 700;
+  color: var(--theme-foreground-muted);
+}
+
+.kal-footer-muted {
+  color: var(--theme-foreground-faint);
+}
+
+.kal-footer a {
+  color: var(--theme-foreground-focus);
+}
+
+/* ------------------------------------------------------------------ */
+/* Finitions                                                           */
+/* ------------------------------------------------------------------ */
+
+/* Sélection de texte dans la teinte du thème */
+::selection {
+  background: color-mix(in srgb, var(--theme-foreground-focus), transparent 78%);
+}
+
+/* Titres de page : accent bleu sous le h1, filet discret sous les h2 */
+#observablehq-main h1 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  padding-bottom: 0.35rem;
+  border-bottom: 2px solid
+    color-mix(in srgb, var(--theme-foreground-focus), transparent 75%);
+}
+
+#observablehq-main h2 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--theme-foreground-faintest);
+}
+
+/* Liens : souligné fin et décalé, plus élégant */
+#observablehq-main a[href] {
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+
+/* --- Widgets (Inputs) ------------------------------------------------ */
+
+/* Libellés des widgets : petites capitales discrètes */
+#observablehq-main form > label {
+  font: 600 11.5px var(--sans-serif);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--theme-foreground-muted);
+}
+
+/* Menus déroulants et champs texte : pilules assorties au thème */
+#observablehq-main :is(select, input:not([type="checkbox"]):not([type="radio"]):not([type="range"])) {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--theme-foreground-faint);
+  border-radius: 9px;
+  background-color: var(--theme-background);
+  color: var(--theme-foreground);
+  font: 500 13.5px var(--sans-serif);
+  box-shadow: 0 1px 2px rgba(16, 49, 79, 0.06);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+#observablehq-main select {
+  padding-right: 2.2rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%2310314f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 11px;
+  cursor: pointer;
+}
+
+#observablehq-main :is(select, input:not([type="checkbox"]):not([type="radio"]):not([type="range"])):hover {
+  border-color: color-mix(
+    in srgb,
+    var(--theme-foreground-focus) 40%,
+    var(--theme-foreground-faint)
+  );
+}
+
+#observablehq-main :is(select, input:not([type="checkbox"]):not([type="radio"]):not([type="range"])):focus-visible {
+  outline: none;
+  border-color: var(--theme-foreground-focus);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--theme-foreground-focus), transparent 85%);
+}
+
+/* Tableaux (Inputs.table) : carte arrondie, en-têtes en petites capitales */
+#observablehq-main .inputs-3a86ea-table {
+  border: 1px solid var(--theme-foreground-faintest);
+  border-radius: 12px;
+  background: var(--theme-background);
+  box-shadow: 0 1px 3px rgba(16, 49, 79, 0.05);
+}
+
+#observablehq-main .inputs-3a86ea-table thead th {
+  padding: 8px 10px;
+  font: 600 11px var(--sans-serif);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--theme-foreground-muted);
+  /* presque opaque : l'en-tête est sticky au-dessus des lignes */
+  background: color-mix(in srgb, var(--theme-foreground-focus) 7%, var(--theme-background));
+}
+
+#observablehq-main .inputs-3a86ea-table td,
+#observablehq-main .inputs-3a86ea-table th {
+  padding: 6px 10px;
+}
+
+/* Coins arrondis sur les cellules d'angle (compatible en-tête sticky) */
+#observablehq-main .inputs-3a86ea-table thead th:first-child {
+  border-top-left-radius: 11px;
+}
+
+#observablehq-main .inputs-3a86ea-table thead th:last-child {
+  border-top-right-radius: 11px;
+}
+
+#observablehq-main .inputs-3a86ea-table tbody tr:last-child td:first-child {
+  border-bottom-left-radius: 11px;
+}
+
+#observablehq-main .inputs-3a86ea-table tbody tr:last-child td:last-child {
+  border-bottom-right-radius: 11px;
+}
+
+/* Ligne survolée : légère teinte bleue */
+#observablehq-main .inputs-3a86ea-table tbody tr:hover td {
+  background: color-mix(in srgb, var(--theme-foreground-focus) 5%, var(--theme-background));
+}
+
+/* --- Carte (Leaflet) -------------------------------------------------- */
+
+#observablehq-main .leaflet-container {
+  border-radius: 12px;
+  border: 1px solid var(--theme-foreground-faintest);
+  box-shadow: 0 2px 12px rgba(16, 49, 79, 0.08);
+}
+
+#observablehq-main .leaflet-popup-content-wrapper,
+#observablehq-main .leaflet-popup-tip {
+  border-radius: 10px;
+}
+
+#observablehq-main .leaflet-popup-content {
+  font: 12.5px/1.5 var(--sans-serif);
+  margin: 10px 14px;
+}
+
+/* --- Barres de défilement --------------------------------------------- */
+
+#observablehq-main ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+#observablehq-main ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#observablehq-main ::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--theme-foreground) 22%, var(--theme-background));
+  border-radius: 6px;
+  border: 2px solid var(--theme-background);
+}
+
+#observablehq-main ::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--theme-foreground) 38%, var(--theme-background));
+}
+
+/* --- Encart d'information (« No IPLC encroachment… ») ------------------ */
+
+.kal-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.9rem 1.25rem;
+  border: 1px solid
+    color-mix(in srgb, var(--theme-foreground-focus), transparent 85%);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--theme-foreground-focus), transparent 95%);
+  color: var(--theme-foreground-muted);
+  font: 500 13.5px var(--sans-serif);
+}

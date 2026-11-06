@@ -1,5 +1,4 @@
 ---
-theme: air
 title: Transition Mines
 toc: false
 sql:
@@ -64,7 +63,7 @@ const encroachment = {
 // Message affiché à la place des graphiques quand aucun projet n'empiète sur une aire IPLC.
 // Fonction : chaque cellule doit recevoir son propre nœud DOM (un nœud ne peut être qu'à un endroit).
 const noEncroachment = () =>
-  html`<div style="padding:1.5rem;text-align:center;color:var(--theme-foreground-muted)">No IPLC encroachment in this country.</div>`;
+  html`<div class="kal-notice">No IPLC encroachment in this country.</div>`;
 
 // Cellule volontairement vide : son bloc est masqué en CSS (voir le style en haut de page),
 // ce qui permet de faire disparaître complètement un graphique sans laisser d'espace.

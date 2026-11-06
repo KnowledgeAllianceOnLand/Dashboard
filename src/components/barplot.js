@@ -1,7 +1,7 @@
 import * as Plot from "npm:@observablehq/plot";
 import {titleElement} from "./title.js";
 
-const FONT_FAMILY = '"Source Sans 3", system-ui, sans-serif';
+const FONT_FAMILY = '"Inter", system-ui, sans-serif';
 
 // Palette utilisée quand aucune couleur n'est fournie pour une catégorie.
 // Les couleurs déjà prises par l'appelant sont écartées pour éviter les doublons.

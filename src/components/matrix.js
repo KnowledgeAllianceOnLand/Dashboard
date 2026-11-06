@@ -1,4 +1,5 @@
 import * as Plot from "npm:@observablehq/plot";
+import {titleElement} from "./title.js";
 
 const FONT_FAMILY = '"Source Sans 3", system-ui, sans-serif';
 
@@ -36,7 +37,8 @@ function resized(render) {
  * si un ordre explicite est fourni. Les combinaisons absentes de la donnée sont affichées à 0.
  *
  * @param data itérable d'objets
- * @param options {x, y, value, xDomain, yDomain, legendLabel, format, scheme, compactWidth, emptyMessage}
+ * @param options {x, y, value, xDomain, yDomain, legendLabel, title, format, scheme, compactWidth, emptyMessage}
+ *   `title` : titre affiché au-dessus (même format que le barplot)
  */
 export function matrix(data, {
   x = "x",
@@ -45,6 +47,7 @@ export function matrix(data, {
   xDomain,
   yDomain,
   legendLabel = typeof value === "string" ? value : null,
+  title = null,
   format = formatNumber,
   scheme = "Reds",
   compactWidth = 620,
@@ -69,7 +72,10 @@ export function matrix(data, {
     empty.style.cssText = "padding:1.5rem;text-align:center;color:var(--theme-foreground-muted)";
     if (emptyMessage instanceof Node) empty.append(emptyMessage);
     else empty.textContent = emptyMessage;
-    return empty;
+    if (!title) return empty;
+    const container = document.createElement("div");
+    container.append(titleElement(title), empty);
+    return container;
   }
 
   // Grille complète : les combinaisons sans donnée apparaissent à 0.
@@ -99,7 +105,7 @@ export function matrix(data, {
     return lines.join("\n");
   };
 
-  return resized((availableWidth) => {
+  const chart = resized((availableWidth) => {
     const compact = availableWidth < compactWidth;
     const xFontSize = compact ? 10 : 12;
     const yFontSize = compact ? 10 : 12;
@@ -180,4 +186,10 @@ export function matrix(data, {
     wrapper.append(legend, plot);
     return wrapper;
   });
+
+  if (!title) return chart;
+
+  const container = document.createElement("div");
+  container.append(titleElement(title), chart);
+  return container;
 }

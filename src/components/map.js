@@ -46,19 +46,26 @@ function defaultPopup(properties) {
 /**
  * Carte Leaflet générique.
  *
- * Les catégories de la légende sont dérivées de la donnée (`category`), dans l'ordre
- * d'apparition ; leurs libellés et couleurs sont fournis par l'appelant (`label`, `colorOf`).
+ * Les catégories sont dérivées de la donnée (`category`) ; leurs libellés et couleurs sont
+ * fournis par l'appelant (`label`, `colorOf`), ainsi que l'ordre de dessin (`order`).
  *
  * @param geojson FeatureCollection à afficher
- * @param options {category, label, colorOf, legendTitle, popup, height, tiles,
+ * @param options {category, label, colorOf, order, legendTitle, popup, height, tiles,
  *                 attribution, tileMaxZoom, fitPadding, fitMaxZoom, center, zoom,
+ *                 pointRadius, pointOpacity, areaOpacity, weight,
  *                 ariaLabel, emptyMessage}
  *   `label` : fonction (valeur) → texte, ou objet {valeur: texte}
+ *   `popup` : fonction (propriétés, feature) → texte/HTML/élément, ou `false` pour désactiver les popups
+ *   (les couches deviennent alors non interactives, ce qui allège la carte).
+ *   `order` : ordre des catégories, du dessous vers le dessus (ex. ["none", "precise", "indicative"] ;
+ *   les entités de la dernière catégorie sont dessinées par-dessus). Sert aussi d'ordre de légende.
+ *   `pointRadius` / `pointOpacity` : taille (px) et opacité des points ; `areaOpacity` : opacité des surfaces.
  */
 export function map(geojson, {
   category = null,
   label = (value) => String(value),
   colorOf = null,
+  order = null,
   legendTitle = null,
   popup = defaultPopup,
   height = 420,
@@ -69,6 +76,10 @@ export function map(geojson, {
   fitMaxZoom = 12,
   center = [20, 0],
   zoom = 2,
+  pointRadius = 6,
+  pointOpacity = 0.8,
+  areaOpacity = 0.55,
+  weight = 1.5,
   ariaLabel = "Interactive map",
   emptyMessage = "No data available",
 } = {}) {
@@ -87,16 +98,28 @@ export function map(geojson, {
   const rawCategory = category ? accessor(category) : null;
   // `category` peut être une clé ou un accesseur, ce qui suffit pour normaliser une valeur.
   const getCategory = rawCategory ? (feature) => rawCategory(feature.properties ?? {}, feature) : null;
-  // Ordre de la légende : celui de `colorOf` si fourni, sinon l'ordre d'apparition dans la donnée.
+  // Ordre de la légende : celui de `order` s'il est fourni, sinon celui de `colorOf`,
+  // sinon l'ordre d'apparition dans la donnée.
   const categories = (() => {
     if (!getCategory) return [];
     const present = [...new Set(features.map((f) => getCategory(f)))];
-    if (!colorOf || typeof colorOf !== "object") return present;
-    const ordered = Object.keys(colorOf)
-      .map((key) => present.find((value) => String(value) === key))
+    const explicit = order ?? (colorOf && typeof colorOf === "object" ? Object.keys(colorOf) : null);
+    if (!explicit) return present;
+    const ordered = explicit
+      .map((key) => present.find((value) => String(value) === String(key)))
       .filter((value) => value !== undefined);
     return [...ordered, ...present.filter((value) => !ordered.includes(value))];
   })();
+
+  // Ordre de dessin : les entités sont créées dans l'ordre des catégories, la dernière
+  // catégorie de `order` se retrouve donc dessinée par-dessus les autres.
+  const rankOf = (feature) => {
+    const index = categories.indexOf(getCategory(feature));
+    return index < 0 ? categories.length : index;
+  };
+  const orderedGeojson = getCategory && categories.length
+    ? {...geojson, features: [...features].sort((a, b) => rankOf(a) - rankOf(b))}
+    : geojson;
 
   const colorFor = (value) => {
     if (typeof colorOf === "function") return colorOf(value);
@@ -112,9 +135,21 @@ export function map(geojson, {
     return String(value);
   };
 
+  const isPoint = (feature) => {
+    const type = feature?.geometry?.type;
+    return type === "Point" || type === "MultiPoint";
+  };
+
+  // Leaflet applique `style` à **toutes** les couches, y compris les marqueurs créés par
+  // `pointToLayer` : il faut donc distinguer points et surfaces ici, sinon `areaOpacity`
+  // écraserait l'opacité de remplissage des points.
   const style = (feature) => {
     const color = colorFor(getCategory ? getCategory(feature) : undefined);
-    return {color: color.stroke, fillColor: color.fill, fillOpacity: 0.55, weight: 1.5};
+    // Sans popup, les couches n'ont aucune raison d'être interactives.
+    const interactive = Boolean(popup);
+    return isPoint(feature)
+      ? {color: color.stroke, fillColor: color.fill, opacity: pointOpacity, fillOpacity: pointOpacity, weight, interactive}
+      : {color: color.stroke, fillColor: color.fill, fillOpacity: areaOpacity, weight, interactive};
   };
 
   // Leaflet doit être initialisé alors que le conteneur est dans le DOM et dimensionné,
@@ -124,13 +159,11 @@ export function map(geojson, {
     const instance = L.map(container, {scrollWheelZoom: false, preferCanvas: true});
     L.tileLayer(tiles, {attribution, maxZoom: tileMaxZoom}).addTo(instance);
 
-    const layer = L.geoJSON(geojson, {
-      pointToLayer: (feature, latlng) => {
-        const {color: stroke, fillColor} = style(feature);
-        return L.circleMarker(latlng, {radius: 6, color: stroke, fillColor, fillOpacity: 0.8, weight: 1.5});
-      },
+    const layer = L.geoJSON(orderedGeojson, {
+      pointToLayer: (feature, latlng) => L.circleMarker(latlng, {radius: pointRadius, ...style(feature)}),
       style,
       onEachFeature: (feature, featureLayer) => {
+        if (!popup) return;
         const content = popup(feature.properties ?? {}, feature);
         if (content) featureLayer.bindPopup(content);
       },

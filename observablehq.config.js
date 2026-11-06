@@ -16,18 +16,15 @@ export default {
   // The pages and sections in the sidebar. If you don’t specify this option,
   // all pages will be listed in alphabetical order. Listing pages explicitly
   // lets you organize them into sections and have unlisted pages.
-  // pages: [
-  //   {
-  //     name: "Examples",
-  //     pages: [
-  //       {name: "Dashboard", path: "/example-dashboard"},
-  //       {name: "Report", path: "/example-report"}
-  //     ]
-  //   }
-  // ],
+  // Les deux pages sont listées au même niveau ; le lien d'accueil que Framework ajoute
+  // automatiquement (libellé = titre de l'appli) est masqué par la règle CSS de `head`.
+  pages: [
+    {name: "Renewable Energy", path: "/"},
+    {name: "Transition Mines", path: "/mines"},
+  ],
 
   // Content to add to the head of the page, e.g. for a favicon:
-  head: '<link rel="icon" href="observable.png" type="image/png" sizes="32x32">',
+  head: '<link rel="icon" href="observable.png" type="image/png" sizes="32x32">\n    <style>#observablehq-sidebar > ol:first-of-type { display: none; }</style>',
 
   // The path to the source root.
   root: "src",

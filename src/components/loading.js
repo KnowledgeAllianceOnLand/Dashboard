@@ -67,17 +67,30 @@ export function withLoading(promise, render, {loading: message = "Loading…", h
   const container = document.createElement("div");
   container.append(loading(message, {height}));
 
+  const fail = (error) => {
+    if (!container.isConnected) return;
+    const box = document.createElement("div");
+    box.style.cssText = "padding:1rem;border:1px solid var(--theme-critical);border-radius:6px;font-size:0.9rem";
+    box.textContent = `Error: ${error?.message ?? error}`;
+    container.replaceChildren(box);
+  };
+
   promise.then(
     (value) => {
-      if (container.isConnected) container.replaceChildren(render(value));
-    },
-    (error) => {
       if (!container.isConnected) return;
-      const box = document.createElement("div");
-      box.style.cssText = "padding:1rem;border:1px solid var(--theme-critical);border-radius:6px;font-size:0.9rem";
-      box.textContent = `Error: ${error?.message ?? error}`;
-      container.replaceChildren(box);
+      let node;
+      try {
+        node = render(value);
+      } catch (error) {
+        fail(error);
+        return;
+      }
+      // `render` doit produire un nœud DOM ; sinon on affiche l'erreur au lieu de laisser
+      // tourner le spinner indéfiniment.
+      if (node instanceof Node) container.replaceChildren(node);
+      else fail(new Error(`withLoading: render() must return a DOM node (got ${typeof node})`));
     },
+    fail,
   );
 
   return container;
